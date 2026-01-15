@@ -1,1 +1,139 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>ABHHS Reunion Registration</title>
 
+<style>
+body{font-family:Arial;background:#f1f3f4}
+.form{max-width:720px;margin:20px auto;background:#fff;padding:25px;border-radius:12px}
+h2{text-align:center}
+#counter{margin-bottom:15px;font-weight:bold;color:green;text-align:center}
+label{font-weight:bold;margin-top:12px;display:block}
+input,textarea{width:100%;padding:10px;margin-top:5px}
+.row{display:flex;align-items:center;gap:8px;margin:6px 0}
+.total{font-size:18px;font-weight:bold;color:#d93025;margin-top:10px}
+button{width:100%;padding:14px;margin-top:15px;background:#1a73e8;color:#fff;border:none;border-radius:8px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6)}
+.box{background:#fff;max-width:380px;margin:80px auto;padding:20px;border-radius:12px;text-align:center}
+.bold{font-weight:bold;font-size:18px}
+</style>
+</head>
+
+<body>
+
+<div class="form">
+<h2>ABHHS Reunion Registration</h2>
+
+<div id="counter">লোড হচ্ছে...</div>
+
+<input id="name" placeholder="আপনার নাম">
+<input id="batch" placeholder="SSC ব্যাচ">
+<input id="blood" placeholder="রক্তের গ্রুপ">
+<input id="phone" placeholder="ফোন নম্বর">
+<input id="email" placeholder="Email (confirmation যাবে)">
+<input id="profession" placeholder="পেশা">
+<input id="organization" placeholder="প্রতিষ্ঠান">
+<textarea id="address" placeholder="ঠিকানা"></textarea>
+<input id="facebook" placeholder="Facebook আইডি / নাম">
+
+<label>আপনার সাথে কে কে আসবে?</label>
+<div class="row"><input type="checkbox" value="0" class="fee"> ৪ বছরের নিচে শিশু (ফ্রি)</div>
+<div class="row"><input type="checkbox" value="300" class="fee"> ৫–১০ বছরের শিশু (৳৩০০)</div>
+<div class="row"><input type="checkbox" value="500" class="fee"> অতিথি (৳৫০০)</div>
+<div class="row"><input type="checkbox" value="1000" class="fee"> ছাত্র/ছাত্রী (৳১০০০)</div>
+
+<div class="total">মোট টাকা: ৳ <span id="total">0</span></div>
+
+<button onclick="openPay()">পে করুন</button>
+
+<div id="afterPay" style="display:none">
+<input id="txn" placeholder="Transaction ID অথবা যে নম্বর থেকে টাকা পাঠানো হয়েছে">
+<label>পাসপোর্ট সাইজ ছবি / পেমেন্ট স্ক্রিনশট</label>
+<input type="file" id="photo" accept="image/*">
+<button onclick="submitForm()">Submit</button>
+</div>
+</div>
+
+<div class="modal" id="payModal">
+ <div class="box">
+  <p class="bold">Bkash Payment</p>
+  <p>Send Money to</p>
+  <p class="bold">01877748022</p>
+  <p>Amount: <span class="bold">৳ <span id="payAmount"></span></span></p>
+  <p>Reference: Name + SSC Batch</p>
+  <button onclick="closePay()">আমি পেমেন্ট করেছি</button>
+ </div>
+</div>
+
+<script>
+const WEB_APP_URL =
+"https://script.google.com/macros/s/AKfycbyGxqdbu-lD30Jwrhje0n6WCc8bC6YvuhDfjkDeRsghp2HvuqsM2KSaCKHZ6tqXSzaf/exec";
+
+let total=0;
+const totalEl=document.getElementById("total");
+
+document.querySelectorAll(".fee").forEach(c=>{
+ c.onchange=()=>{
+  let sum=0;
+  document.querySelectorAll(".fee:checked").forEach(x=>sum+=+x.value);
+  total=sum+Math.floor(sum/100)*2;
+  totalEl.innerText=total;
+ };
+});
+
+function openPay(){
+ if(total===0){alert("অপশন নির্বাচন করুন");return;}
+ document.getElementById("payAmount").innerText=total;
+ document.getElementById("payModal").style.display="block";
+}
+function closePay(){
+ document.getElementById("payModal").style.display="none";
+ document.getElementById("afterPay").style.display="block";
+}
+
+// Live counter
+fetch(WEB_APP_URL)
+.then(r=>r.text())
+.then(n=>{
+ document.getElementById("counter").innerText =
+ "🎉 এখন পর্যন্ত "+n+" জন রেজিস্ট্রেশন করেছেন";
+});
+
+function submitForm(){
+ let f=photo.files[0];
+ if(txn.value==="" && !f){
+  alert("Transaction ID বা Sender Number এবং ছবি দিন");
+  return;
+ }
+ let r=new FileReader();
+ r.onload=()=>{
+  fetch(WEB_APP_URL,{
+   method:"POST",
+   body:JSON.stringify({
+    name:name.value,
+    batch:batch.value,
+    blood:blood.value,
+    phone:phone.value,
+    email:email.value,
+    profession:profession.value,
+    organization:organization.value,
+    address:address.value,
+    facebook:facebook.value,
+    participants:"Selected",
+    amount:total,
+    txn_or_sender:txn.value,
+    image:r.result.split(",")[1],
+    imageType:f.type
+   })
+  }).then(()=>{
+    alert("রেজিস্ট্রেশন সফল হয়েছে। ইমেইল চেক করুন।");
+    location.reload();
+  });
+ };
+ r.readAsDataURL(f);
+}
+</script>
+
+</body>
+</html>
